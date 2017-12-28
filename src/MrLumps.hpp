@@ -20,4 +20,5 @@ struct VCS2x4Widget : ModuleWidget {
 
 struct SEQEuclidWidget : ModuleWidget {
 	SEQEuclidWidget();
+	Menu *createContextMenu() override;
 };

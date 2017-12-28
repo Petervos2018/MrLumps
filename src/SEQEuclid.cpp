@@ -1,5 +1,6 @@
 // Todo make smaller lookup table
-// context menu stuff
+// context menu stuff  
+// NEW in v0.5.2 High Contrast option, SVG resizable panel graphics, onSampleRateChange bug fix
 #include <string>
 #include <memory>
 
@@ -8,7 +9,7 @@
 
 #include "erBitData.hpp"
 
-#define BG_IMAGE_FILE  assetPlugin(plugin, "res/SEQEuclid.png")
+//BG_IMAGE_FILE replaced with SVG image in v0.5.2.
 #define FONT_FILE      assetPlugin(plugin, "res/Segment7Standard.ttf")
 
 
@@ -171,6 +172,7 @@ struct SEQEuclid : Module {
   int bpm = 120;
   double timerLength = 1.0 / (static_cast<double>(bpm) / 60.0);
   double timerTime = timerLength;
+  int contrast = 0; // module context menu option, high contrast = 1
 
   SEQEuclid() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 
@@ -193,8 +195,32 @@ struct SEQEuclid : Module {
   }
 
   void step();
+
+  void onSampleRateChange() override;
+
+  json_t *toJson() override
+  {
+		json_t *rootJ = json_object();
+		json_t *contrastJ = json_integer((int)contrast);
+		json_object_set_new(rootJ, "contrast", contrastJ);  // save contrast setting  
+    return rootJ;
+  }
+  
+  void fromJson(json_t *rootJ) override
+  {
+		json_t *contrastJ = json_object_get(rootJ, "contrast");
+		if (contrastJ)
+    {
+			contrast = json_integer_value(contrastJ);  // retrieve contrast setting		
+		}  
+  }
 };
 
+
+// Update dTime for SampleRateChange from Rack toolbar
+void SEQEuclid::onSampleRateChange() {
+  dTime = 1.0 / static_cast<double>(engineGetSampleRate());
+}
 
 void SEQEuclid::step() {
   const float lightLambda = 0.075;
@@ -346,9 +372,10 @@ void SEQEuclid::step() {
 
 
 struct SEQEuclidDisplay : TransparentWidget {
+  SEQEuclid *module;  // make sure we can see module-level variables, including contrast, from draw()
   int *value;
   std::shared_ptr<Font> font;
-
+ 
   SEQEuclidDisplay() {
     font = Font::load(FONT_FILE);
   }
@@ -357,11 +384,18 @@ struct SEQEuclidDisplay : TransparentWidget {
     // Background
     NVGcolor backgroundColor = nvgRGB(0x74, 0x44, 0x44);
     NVGcolor borderColor = nvgRGB(0x10, 0x10, 0x10);
+    if (module->contrast == 1) {
+      backgroundColor = nvgRGB(0xc0, 0xc0, 0xc0);  // high contrast light background color
+      borderColor = nvgRGB(0x17, 0x17, 0x17);  // high contrast dark border color
+    }
     nvgBeginPath(vg);
     nvgRoundedRect(vg, 0.0, 0.0, box.size.x, box.size.y, 5.0);
     nvgFillColor(vg, backgroundColor);
     nvgFill(vg);
     nvgStrokeWidth(vg, 1.0);
+    if (module->contrast == 1) {
+      nvgStrokeWidth(vg, 3.0);  // high contrast thicker border
+    }
     nvgStrokeColor(vg, borderColor);
     nvgStroke(vg);
 
@@ -373,14 +407,23 @@ struct SEQEuclidDisplay : TransparentWidget {
     Vec textPos = Vec(7.0f, 35.0f);
 
     NVGcolor textColor = nvgRGB(0xdf, 0xd2, 0x2c);
+    if (module->contrast == 1) {
+      textColor = nvgRGB(0xc0, 0xc0, 0xc0);  // high contrast light text color
+    }
     nvgFillColor(vg, nvgTransRGBA(textColor, 16));
     nvgText(vg, textPos.x, textPos.y, "~~~", NULL);
 
     textColor = nvgRGB(0xda, 0xe9, 0x29);
+    if (module->contrast == 1) {
+      textColor = nvgRGB(0xc0, 0xc0, 0xc0);  // high contrast light text color
+    }
     nvgFillColor(vg, nvgTransRGBA(textColor, 16));
     nvgText(vg, textPos.x, textPos.y, "\\\\\\", NULL);
 
     textColor = nvgRGB(0xf0, 0x00, 0x00);
+    if (module->contrast == 1) {
+      textColor = nvgRGB(0x00, 0x00, 0x00);  // high contrast dark text color
+    }
     nvgFillColor(vg, textColor);
     nvgText(vg, textPos.x, textPos.y, to_display.c_str(), NULL);
   }
@@ -388,7 +431,7 @@ struct SEQEuclidDisplay : TransparentWidget {
 
 
 SEQEuclidWidget::SEQEuclidWidget() {
-  SEQEuclid *module = new SEQEuclid();
+  SEQEuclid *module = new SEQEuclid(); 
   setModule(module);
   box.size = Vec(17*22, 380);
 
@@ -396,10 +439,10 @@ SEQEuclidWidget::SEQEuclidWidget() {
   const float bankY[7] = { 23, 72, 110, 164, 218, 272, 326 };
 
   {
-    Panel *panel = new LightPanel();
-    panel->backgroundImage = Image::load(BG_IMAGE_FILE);
-    panel->box.size = box.size;
-    addChild(panel);
+		SVGPanel *panel = new SVGPanel();
+		panel->box.size = box.size;
+		panel->setBackground(SVG::load(assetPlugin(plugin, "res/SEQEuclid.svg")));  // SVG panel graphic instead of PNG
+		addChild(panel);
   }
 
   // bpm display + control
@@ -409,6 +452,7 @@ SEQEuclidWidget::SEQEuclidWidget() {
     display->box.pos = Vec(bankX[0], bankY[0]);
     display->box.size = Vec(82, 42);
     display->value = &module->bpm;
+    display->module = module; // pass access to module-level variables, including contrast
     addChild(display);
   }
   addParam(createParam<Davies1900hBlackKnob>(Vec(bankX[1], bankY[0]+3), module, SEQEuclid::BPM_PARAM, 30.0, 256.0, 120.0));
@@ -428,6 +472,7 @@ SEQEuclidWidget::SEQEuclidWidget() {
     display->box.pos = Vec(bankX[0], bankY[2]);
     display->box.size = Vec(82, 42);
     display->value = &module->bank1.fill;
+    display->module = module; // pass access to module-level variables, including contrast
     addChild(display);
   }
   {
@@ -435,6 +480,7 @@ SEQEuclidWidget::SEQEuclidWidget() {
     display->box.pos = Vec(bankX[2], bankY[2]);
     display->box.size = Vec(82, 42);
     display->value = &module->bank1.length;
+    display->module = module; // pass access to module-level variables, including contrast
     addChild(display);
   }
 
@@ -443,6 +489,7 @@ SEQEuclidWidget::SEQEuclidWidget() {
     display->box.pos = Vec(bankX[0], bankY[3]);
     display->box.size = Vec(82, 42);
     display->value = &module->bank2.fill;
+    display->module = module; // pass access to module-level variables, including contrast
     addChild(display);
   }
   {
@@ -450,6 +497,7 @@ SEQEuclidWidget::SEQEuclidWidget() {
     display->box.pos = Vec(bankX[2], bankY[3]);
     display->box.size = Vec(82, 42);
     display->value = &module->bank2.length;
+    display->module = module; // pass access to module-level variables, including contrast
     addChild(display);
   }
   {
@@ -457,6 +505,7 @@ SEQEuclidWidget::SEQEuclidWidget() {
     display->box.pos = Vec(bankX[0], bankY[4]);
     display->box.size = Vec(82, 42);
     display->value = &module->bank3.fill;
+    display->module = module; // pass access to module-level variables, including contrast
     addChild(display);
   }
   {
@@ -464,6 +513,7 @@ SEQEuclidWidget::SEQEuclidWidget() {
     display->box.pos = Vec(bankX[2], bankY[4]);
     display->box.size = Vec(82, 42);
     display->value = &module->bank3.length;
+    display->module = module; // pass access to module-level variables, including contrast
     addChild(display);
   }
   {
@@ -471,6 +521,7 @@ SEQEuclidWidget::SEQEuclidWidget() {
     display->box.pos = Vec(bankX[0], bankY[5]);
     display->box.size = Vec(82, 42);
     display->value = &module->bank4.fill;
+    display->module = module; // pass access to module-level variables, including contrast
     addChild(display);
   }
   {
@@ -478,6 +529,7 @@ SEQEuclidWidget::SEQEuclidWidget() {
     display->box.pos = Vec(bankX[2], bankY[5]);
     display->box.size = Vec(82, 42);
     display->value = &module->bank4.length;
+    display->module = module; // pass access to module-level variables, including contrast
     addChild(display);
   }
 
@@ -506,4 +558,47 @@ SEQEuclidWidget::SEQEuclidWidget() {
   addChild(createScrew<ScrewSilver>(Vec(15, 365)));
   addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 365)));
 
+}
+
+// Define and create module's context menu, options section, and High Contrast item
+// Default is contrast = 0 for red digital panels
+// High Contrast is contrast = 1 for black-on-white digital panels
+// High Contrast option added to module to assist users reporting problems due to color blindness and vision issues
+
+struct SEQEuclidSettingItem : MenuItem {  // define checkmark toggle for context menu
+	uint8_t *setting = NULL;
+	uint8_t offValue = 0;
+	uint8_t onValue = 1;
+	void onAction(EventAction &e) override {
+		// Toggle setting
+		*setting = (*setting == onValue) ? offValue : onValue;
+	}
+	void step() override {
+		rightText = (*setting == onValue) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
+struct SEQEuclidHighContrastItem : MenuItem {  // define High Contrast menu item
+	SEQEuclid *seqeuclid;
+	void onAction(EventAction &e) override {
+		seqeuclid->contrast = !seqeuclid->contrast;
+	}
+	void step() override {
+		rightText = (seqeuclid->contrast) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
+Menu *SEQEuclidWidget::createContextMenu() {  // add context menu
+	Menu *menu = ModuleWidget::createContextMenu();
+
+	SEQEuclid *seqeuclid = dynamic_cast<SEQEuclid*>(module);
+	assert(seqeuclid);
+
+	menu->pushChild(construct<MenuLabel>());
+	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Options")); // add options section to menu
+	menu->pushChild(construct<SEQEuclidHighContrastItem>(&MenuEntry::text, "High Contrast", &SEQEuclidHighContrastItem::seqeuclid, seqeuclid));  // add High Contrast item
+
+	return menu;
 }

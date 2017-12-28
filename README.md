@@ -1,24 +1,30 @@
 <img src="https://github.com/djpeterso23662/MrLumps/blob/master/res/MrLumps_Family.jpg" width="100%">
 
-MrLumps VCV Modules
-===================
+MrLumps VCV Rack Modules
+========================
 
 This is a fork of [MrLumps](https://github.com/MrLumps) 'Fundamental' repo, and
 has been changed so that it ends up as a plugin called MrLumps for use in [VCV
 Rack](vcvrack.com), with both the euclidean sequencer and VCS modules.
 
-All credit is due to MrLumps. Daniel Iel organized the three modules into one
-GitHub repository and tidied up a bit. Nik Jewell’s Mac Build Monitor script
-helped move the code to VCV Rack 0.4.0. Jeff Tsukuru’s script helped move the
-code to VCV Rack 0.5.0. David Peterson fixed the lights and tidied up a little
-more.
+All credit is due to Ian Kerr (MrLumps). Daniel Iel organized the three modules
+into one GitHub repository and tidied up a bit. Nik Jewell’s Mac Build Monitor
+script helped move the code to VCV Rack 0.4.0. Jeff Tsukuru’s script helped move
+the code to VCV Rack 0.5.0. David Peterson fixed the lights and tidied up a
+little more. Thanks to Martin Lueders for identifying a sample rate change bug
+in SEQ-Euclid and for proposing a solution with onSampleRateChange().
+
+David Peterson added a High Contrast option, replaced the PNG panel images with
+SVG images, fixed an onSampleRateChange bug, and made MrLumps compliant with VCV
+Rack’s Community Package manager in release 0.5.2.
 
 Building
 --------
 
-This has been built against VCV Rack 0.5.0. on Windows and MacOS.
+This has been built against VCV Rack 0.5.1. on Linux, MacOS, and Windows.
 
-Just type `make VERSION=0.5.0` in the folder.
+Just type `make `in the folder. The version is now included in the Makefile
+script and does not need to be given on the command line.
 
 SEQ-Euclid
 ----------
@@ -125,6 +131,14 @@ If there is any trigger active in banks 1 through 4 a gate will be sent.
 
 This will blink for the duration of each gate signal.
 
+#### Context Menu Options
+
+##### High Contrast
+
+Right-click (Windows/Linux) or Control-Click (Mac) on the panel to access the
+context menu. Click High Contrast to select easy-to-read, black-on-white colors
+for the numeric display panels.
+
 VCS - Voltage Controlled Switches for VCV Rack
 ----------------------------------------------
 
@@ -133,7 +147,7 @@ Some voltage controlled switches for [VCV Rack](vcvrack.com).
 Usage
 -----
 
-The 1x8 and 2x4 modules both work the same way, You apply a trigger to the
+The 1x8 and 2x4 modules both work the same way. You apply a trigger to the
 trigger input and a signal in to the signal input.
 
 Then you wire up as many outputs as you'd like.
