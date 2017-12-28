@@ -1,10 +1,11 @@
 // Some simple voltage controlled switches
+// NEW in v0.5.2 SVG resizable panel graphics, onSampleRateChange bug fix
 
 #include "MrLumps.hpp"
 #include "dsp/digital.hpp"
 
-#define BG_IMAGE_FILE_1x8  assetPlugin(plugin, "res/VCS1x8.png")
-#define BG_IMAGE_FILE_2x4  assetPlugin(plugin, "res/VCS2x4.png")
+//BG_IMAGE_FILE_1x8 replaced by SVG in v0.5.2
+//BG_IMAGE_FILE_2x4 replaced by SVG in v0.5.2
 
 
 
@@ -103,10 +104,10 @@ OUTPUT:
 		box.size = Vec(15 * 4, 380);
 
 		{
-			Panel *panel = new LightPanel();
-			panel->backgroundImage = Image::load(BG_IMAGE_FILE_1x8);
-			panel->box.size = box.size;
-			addChild(panel);
+		SVGPanel *panel = new SVGPanel();
+		panel->box.size = box.size;
+		panel->setBackground(SVG::load(assetPlugin(plugin, "res/VCS1x8.svg")));  // SVG panel graphic instead of PNG
+		addChild(panel);
 		}
 
 		addChild(createScrew<ScrewSilver>(Vec(15, 0)));
@@ -282,9 +283,9 @@ VCS2x4Widget::VCS2x4Widget() {
 	box.size = Vec(15 * 4, 380);
 
 	{
-		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load(BG_IMAGE_FILE_2x4);
+		SVGPanel *panel = new SVGPanel();
 		panel->box.size = box.size;
+		panel->setBackground(SVG::load(assetPlugin(plugin, "res/VCS2x4.svg")));  // SVG panel graphic instead of PNG
 		addChild(panel);
 	}
 
