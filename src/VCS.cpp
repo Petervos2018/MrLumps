@@ -36,7 +36,7 @@ struct VCS1x8 : Module {
 	}
 
 	// Called via menu
-	void reset() {
+	void onReset() override {
 		for (int c = 0; c < 8; c++) {
 			lights[OUTPUT_LIGHTS + c].value = 0.0f;
 			outputs[c].value = 0.0f;
@@ -46,10 +46,10 @@ struct VCS1x8 : Module {
 	}
 
 	//Todo
-	void randomize() {
+	void onRandomize() override {
 	}
 
-	void step();
+	void step() override;
 };
 
 //Lets try simplest 1st
@@ -97,10 +97,8 @@ OUTPUT:
 
 }
 
-	VCS1x8Widget::VCS1x8Widget() {
-		VCS1x8 *module = new VCS1x8();
-
-		setModule(module);
+struct VCS1x8Widget : ModuleWidget {
+	VCS1x8Widget(VCS1x8 *module) : ModuleWidget(module) {
 		box.size = Vec(15 * 4, 380);
 
 		{
@@ -110,26 +108,25 @@ OUTPUT:
 		addChild(panel);
 		}
 
-		addChild(createScrew<ScrewSilver>(Vec(15, 0)));
-		addChild(createScrew<ScrewSilver>(Vec(15, 365)));
+		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
 
 		const float bankX[8] = { 4, 31, 4, 31, 4, 31, 4, 31 };
 		const float bankY[8] = { 112, 112, 179, 179, 246, 246, 313, 313 };
 
 		//Trigger input
-		addInput(createInput<PJ3410Port>(Vec(29, 23), module, VCS1x8::TRIGGER_INPUT));
+		addInput(Port::create<PJ3410Port>(Vec(29, 23), Port::INPUT, module, VCS1x8::TRIGGER_INPUT));
 
 		//Signal input
-		addInput(createInput<PJ3410Port>(Vec(29, 57), module, VCS1x8::SIGNAL_INPUT));
+		addInput(Port::create<PJ3410Port>(Vec(29, 57), Port::INPUT, module, VCS1x8::SIGNAL_INPUT));
 
 		//Switched ouputs + lights
 		for (int outputs = 0; outputs < 8; outputs++) {
-			addChild(createLight<SmallLight<RedLight>>(Vec(bankX[outputs] + 9, bankY[outputs] - 12), module, VCS1x8::OUTPUT_LIGHTS + outputs));
-			addOutput(createOutput<PJ301MPort>(Vec(bankX[outputs], bankY[outputs]), module, VCS1x8::SWITCHED_OUTPUT + outputs));
+			addChild(ModuleLightWidget::create<SmallLight<RedLight>>(Vec(bankX[outputs] + 9, bankY[outputs] - 12), module, VCS1x8::OUTPUT_LIGHTS + outputs));
+			addOutput(Port::create<PJ301MPort>(Vec(bankX[outputs], bankY[outputs]), Port::OUTPUT, module, VCS1x8::SWITCHED_OUTPUT + outputs));
 		}
-
-
-}
+	}
+};
 
 
 
@@ -175,7 +172,7 @@ struct VCS2x4 : Module {
 	}
 
 	// Called via menu
-	void reset() {
+	void onReset() override {
 		for (int c = 0; c < 4; c++) {
 			lights[OUTPUT_LIGHTS + c].value = 0.0f;   // Left
 			lights[OUTPUT_LIGHTS + c+4].value = 0.0f; // Right	
@@ -189,10 +186,10 @@ struct VCS2x4 : Module {
 	}
 
 	//Todo
-	void randomize() {
+	void onRandomize() override {
 	}
 
-	void step();
+	void step() override;
 };
 
 //Lets try simplest 1st
@@ -276,42 +273,40 @@ OUTPUT:
 }
 
 
-VCS2x4Widget::VCS2x4Widget() {
-	VCS2x4 *module = new VCS2x4();
+struct VCS2x4Widget : ModuleWidget {
+	VCS2x4Widget(VCS2x4 *module) : ModuleWidget(module) {
+		box.size = Vec(15 * 4, 380);
 
-	setModule(module);
-	box.size = Vec(15 * 4, 380);
+		{
+			SVGPanel *panel = new SVGPanel();
+			panel->box.size = box.size;
+			panel->setBackground(SVG::load(assetPlugin(plugin, "res/VCS2x4.svg")));  // SVG panel graphic instead of PNG
+			addChild(panel);
+		}
 
-	{
-		SVGPanel *panel = new SVGPanel();
-		panel->box.size = box.size;
-		panel->setBackground(SVG::load(assetPlugin(plugin, "res/VCS2x4.svg")));  // SVG panel graphic instead of PNG
-		addChild(panel);
+		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+
+		const float bankX[2] = { 4, 31 };
+		const float bankY[4] = { 112, 179, 246, 313 };
+
+		//Trigger input
+		addInput(Port::create<PJ3410Port>(Vec(29, 23), Port::INPUT, module, VCS2x4::TRIGGER_INPUT));
+
+		//Signal inputs
+		addInput(Port::create<PJ3410Port>(Vec(0, 52), Port::INPUT, module, VCS2x4::SIGNAL_INPUT_L));
+		addInput(Port::create<PJ3410Port>(Vec(29, 52), Port::INPUT, module, VCS2x4::SIGNAL_INPUT_R));
+
+		//Switched ouputs + lights
+		for (int outputs = 0; outputs < 4; outputs++) {
+			addChild(ModuleLightWidget::create<SmallLight<RedLight>>(Vec(bankX[0] + 9, bankY[outputs] - 12), module, VCS2x4::OUTPUT_LIGHTS + outputs));
+			addOutput(Port::create<PJ301MPort>(Vec(bankX[0], bankY[outputs]), Port::OUTPUT, module, VCS2x4::SWITCHED_OUTPUT_L + outputs));
+
+			addChild(ModuleLightWidget::create<SmallLight<RedLight>>(Vec(bankX[1] + 9, bankY[outputs] - 12), module, VCS2x4::OUTPUT_LIGHTS + outputs+4));
+			addOutput(Port::create<PJ301MPort>(Vec(bankX[1], bankY[outputs]), Port::OUTPUT, module, VCS2x4::SWITCHED_OUTPUT_R + outputs));
+		}
 	}
+};
 
-	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
-
-	const float bankX[2] = { 4, 31 };
-	const float bankY[4] = { 112, 179, 246, 313 };
-
-	//Trigger input
-	addInput(createInput<PJ3410Port>(Vec(29, 23), module, VCS2x4::TRIGGER_INPUT));
-
-	//Signal inputs
-	addInput(createInput<PJ3410Port>(Vec(0, 52), module, VCS2x4::SIGNAL_INPUT_L));
-	addInput(createInput<PJ3410Port>(Vec(29, 52), module, VCS2x4::SIGNAL_INPUT_R));
-
-	//Switched ouputs + lights
-	for (int outputs = 0; outputs < 4; outputs++) {
-		addChild(createLight<SmallLight<RedLight>>(Vec(bankX[0] + 9, bankY[outputs] - 12), module, VCS2x4::OUTPUT_LIGHTS + outputs));
-		addOutput(createOutput<PJ301MPort>(Vec(bankX[0], bankY[outputs]), module, VCS2x4::SWITCHED_OUTPUT_L + outputs));
-
-		addChild(createLight<SmallLight<RedLight>>(Vec(bankX[1] + 9, bankY[outputs] - 12), module, VCS2x4::OUTPUT_LIGHTS + outputs+4));
-		addOutput(createOutput<PJ301MPort>(Vec(bankX[1], bankY[outputs]), module, VCS2x4::SWITCHED_OUTPUT_R + outputs));
-	}
-
-}
-
-
-
+Model *modelVCS1x8 = Model::create<VCS1x8, VCS1x8Widget>("MrLumps", "VCS1", "1x8 Voltage Controlled Switch", SWITCH_TAG);
+Model *modelVCS2x4 = Model::create<VCS2x4, VCS2x4Widget>("MrLumps", "VCS2", "2x4 Voltage Controlled Switch", SWITCH_TAG);

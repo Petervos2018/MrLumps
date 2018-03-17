@@ -3,22 +3,16 @@
 
 using namespace rack;
 
-
+// Forward-declare the Plugin, defined in MrLumps.cpp
 extern Plugin *plugin;
 
 ////////////////////
 // module widgets
 ////////////////////
 
-struct VCS1x8Widget : ModuleWidget {
-    VCS1x8Widget();
-};
+// Forward-declare each Model, defined in each module source file
+extern Model *modelVCS1x8;
 
-struct VCS2x4Widget : ModuleWidget {
-    VCS2x4Widget();
-};
+extern Model *modelVCS2x4;
 
-struct SEQEuclidWidget : ModuleWidget {
-	SEQEuclidWidget();
-	Menu *createContextMenu() override;
-};
+extern Model *modelSEQEuclid;

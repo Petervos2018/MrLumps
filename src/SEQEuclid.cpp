@@ -177,7 +177,7 @@ struct SEQEuclid : Module {
   SEQEuclid() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 
   // Called via menu
-  void reset() {
+  void onReset() override {
     time = 0.0;
     dTime = 1.0 / static_cast<double>(engineGetSampleRate());
     bpm = 120;
@@ -191,10 +191,10 @@ struct SEQEuclid : Module {
   }
 
   //Todo
-  void randomize() {
+  void onRandomize() override {
   }
 
-  void step();
+  void step() override;
 
   void onSampleRateChange() override;
 
@@ -223,7 +223,7 @@ void SEQEuclid::onSampleRateChange() {
 }
 
 void SEQEuclid::step() {
-  const float lightLambda = 0.075;
+  const float lightLambda = 0.075f;
   bool nextStep = false;
 
   // Do clock stuff
@@ -380,7 +380,7 @@ struct SEQEuclidDisplay : TransparentWidget {
     font = Font::load(FONT_FILE);
   }
 
-  void draw(NVGcontext *vg) {
+  void draw(NVGcontext *vg) override {
     // Background
     NVGcolor backgroundColor = nvgRGB(0x74, 0x44, 0x44);
     NVGcolor borderColor = nvgRGB(0x10, 0x10, 0x10);
@@ -429,137 +429,6 @@ struct SEQEuclidDisplay : TransparentWidget {
   }
 };
 
-
-SEQEuclidWidget::SEQEuclidWidget() {
-  SEQEuclid *module = new SEQEuclid(); 
-  setModule(module);
-  box.size = Vec(17*22, 380);
-
-  const float bankX[10] = { 8, 94, 134, 220, 258, 296, 324, 351 };
-  const float bankY[7] = { 23, 72, 110, 164, 218, 272, 326 };
-
-  {
-		SVGPanel *panel = new SVGPanel();
-		panel->box.size = box.size;
-		panel->setBackground(SVG::load(assetPlugin(plugin, "res/SEQEuclid.svg")));  // SVG panel graphic instead of PNG
-		addChild(panel);
-  }
-
-  // bpm display + control
-
-  {
-    SEQEuclidDisplay *display = new SEQEuclidDisplay();
-    display->box.pos = Vec(bankX[0], bankY[0]);
-    display->box.size = Vec(82, 42);
-    display->value = &module->bpm;
-    display->module = module; // pass access to module-level variables, including contrast
-    addChild(display);
-  }
-  addParam(createParam<Davies1900hBlackKnob>(Vec(bankX[1], bankY[0]+3), module, SEQEuclid::BPM_PARAM, 30.0, 256.0, 120.0));
-
-
-  // Next row of stuff
-
-  addInput(createInput<PJ301MPort>(Vec(bankX[0], bankY[1]), module, SEQEuclid::EXT_CLOCK_INPUT));
-  addInput(createInput<PJ301MPort>(Vec(bankX[1], bankY[1]), module, SEQEuclid::RESET_INPUT));
-  addParam(createParam<TL1105>(Vec(bankX[1]+24+4, bankY[1] + 4), module, SEQEuclid::RESET_BUTTON, 0.0, 1.0, 0.0));
-  addParam(createParam<Davies1900hBlackKnob>(Vec(bankX[5]-6, bankY[1] + 3), module, SEQEuclid::GATE_LENGTH_PARAM, 0.0, 1.0, 1.0));
-
-  // Row displays
-
-  {
-    SEQEuclidDisplay *display = new SEQEuclidDisplay();
-    display->box.pos = Vec(bankX[0], bankY[2]);
-    display->box.size = Vec(82, 42);
-    display->value = &module->bank1.fill;
-    display->module = module; // pass access to module-level variables, including contrast
-    addChild(display);
-  }
-  {
-    SEQEuclidDisplay *display = new SEQEuclidDisplay();
-    display->box.pos = Vec(bankX[2], bankY[2]);
-    display->box.size = Vec(82, 42);
-    display->value = &module->bank1.length;
-    display->module = module; // pass access to module-level variables, including contrast
-    addChild(display);
-  }
-
-  {
-    SEQEuclidDisplay *display = new SEQEuclidDisplay();
-    display->box.pos = Vec(bankX[0], bankY[3]);
-    display->box.size = Vec(82, 42);
-    display->value = &module->bank2.fill;
-    display->module = module; // pass access to module-level variables, including contrast
-    addChild(display);
-  }
-  {
-    SEQEuclidDisplay *display = new SEQEuclidDisplay();
-    display->box.pos = Vec(bankX[2], bankY[3]);
-    display->box.size = Vec(82, 42);
-    display->value = &module->bank2.length;
-    display->module = module; // pass access to module-level variables, including contrast
-    addChild(display);
-  }
-  {
-    SEQEuclidDisplay *display = new SEQEuclidDisplay();
-    display->box.pos = Vec(bankX[0], bankY[4]);
-    display->box.size = Vec(82, 42);
-    display->value = &module->bank3.fill;
-    display->module = module; // pass access to module-level variables, including contrast
-    addChild(display);
-  }
-  {
-    SEQEuclidDisplay *display = new SEQEuclidDisplay();
-    display->box.pos = Vec(bankX[2], bankY[4]);
-    display->box.size = Vec(82, 42);
-    display->value = &module->bank3.length;
-    display->module = module; // pass access to module-level variables, including contrast
-    addChild(display);
-  }
-  {
-    SEQEuclidDisplay *display = new SEQEuclidDisplay();
-    display->box.pos = Vec(bankX[0], bankY[5]);
-    display->box.size = Vec(82, 42);
-    display->value = &module->bank4.fill;
-    display->module = module; // pass access to module-level variables, including contrast
-    addChild(display);
-  }
-  {
-    SEQEuclidDisplay *display = new SEQEuclidDisplay();
-    display->box.pos = Vec(bankX[2], bankY[5]);
-    display->box.size = Vec(82, 42);
-    display->value = &module->bank4.length;
-    display->module = module; // pass access to module-level variables, including contrast
-    addChild(display);
-  }
-
-
-  // Rows of bank controlls
-
-  for (int row = 0; row < 4; row++) {
-    addParam(createParam<Davies1900hBlackKnob>(Vec(bankX[1], bankY[row + 2] + 3), module, SEQEuclid::FILL1_PARAM+row, 0.0, 256.0, 0.0));
-    addParam(createParam<Davies1900hBlackKnob>(Vec(bankX[3], bankY[row + 2] + 3), module, SEQEuclid::LENGTH1_PARAM+row, 0.0, 256.0, 0.0));
-    addParam(createParam<Davies1900hBlackKnob>(Vec(bankX[4], bankY[row + 2] + 3), module, SEQEuclid::PROB1_PARAM + row, 0.0, 1.0, 1.0));
-    addOutput(createOutput<PJ301MPort>(Vec(bankX[5], bankY[row + 2] + 9), module, SEQEuclid::GATE1_OUTPUT + row));
-    addOutput(createOutput<PJ301MPort>(Vec(bankX[6], bankY[row + 2] + 9), module, SEQEuclid::TRIGGER1_OUTPUT + row));
-    addParam(createParam<TL1105>(Vec(bankX[7], bankY[row + 2] + 13), module, SEQEuclid::JOG1_BUTTON + row, 0.0, 1.0, 0.0));
-  }
-
-  // Final 2 outputs and output light
-
-  addOutput(createOutput<PJ301MPort>(Vec(bankX[5], bankY[6] + 8), module, SEQEuclid::GATE_OR_OUTPUT));
-  addOutput(createOutput<PJ301MPort>(Vec(bankX[6], bankY[6] + 8), module, SEQEuclid::TRIGGER_OR_OUTPUT));
-  addChild(createLight<SmallLight<RedLight>>(Vec(bankX[7]+4, bankY[6] + 16), module, SEQEuclid::GATES_LIGHT));
-
-  // Make sure it stays put
-
-  addChild(createScrew<ScrewSilver>(Vec(15, 0)));
-  addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 0)));
-  addChild(createScrew<ScrewSilver>(Vec(15, 365)));
-  addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 365)));
-
-}
-
 // Define and create module's context menu, options section, and High Contrast item
 // Default is contrast = 0 for red digital panels
 // High Contrast is contrast = 1 for black-on-white digital panels
@@ -590,15 +459,145 @@ struct SEQEuclidHighContrastItem : MenuItem {  // define High Contrast menu item
 	}
 };
 
-Menu *SEQEuclidWidget::createContextMenu() {  // add context menu
-	Menu *menu = ModuleWidget::createContextMenu();
+struct SEQEuclidWidget : ModuleWidget {
+  SEQEuclidWidget(SEQEuclid *module) : ModuleWidget(module) {
+    box.size = Vec(17*22, 380);
 
-	SEQEuclid *seqeuclid = dynamic_cast<SEQEuclid*>(module);
-	assert(seqeuclid);
+    const float bankX[10] = { 8, 94, 134, 220, 258, 296, 324, 351 };
+    const float bankY[7] = { 23, 72, 110, 164, 218, 272, 326 };
 
-	menu->pushChild(construct<MenuLabel>());
-	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Options")); // add options section to menu
-	menu->pushChild(construct<SEQEuclidHighContrastItem>(&MenuEntry::text, "High Contrast", &SEQEuclidHighContrastItem::seqeuclid, seqeuclid));  // add High Contrast item
+    {
+      SVGPanel *panel = new SVGPanel();
+      panel->box.size = box.size;
+      panel->setBackground(SVG::load(assetPlugin(plugin, "res/SEQEuclid.svg")));  // SVG panel graphic instead of PNG
+      addChild(panel);
+    }
 
-	return menu;
-}
+    // bpm display + control
+
+    {
+      SEQEuclidDisplay *display = new SEQEuclidDisplay();
+      display->box.pos = Vec(bankX[0], bankY[0]);
+      display->box.size = Vec(82, 42);
+      display->value = &module->bpm;
+      display->module = module; // pass access to module-level variables, including contrast
+      addChild(display);
+    }
+    addParam(ParamWidget::create<Davies1900hBlackKnob>(Vec(bankX[1], bankY[0]+3), module, SEQEuclid::BPM_PARAM, 30.0, 256.0, 120.0));
+
+
+    // Next row of stuff
+
+    addInput(Port::create<PJ301MPort>(Vec(bankX[0], bankY[1]), Port::INPUT, module, SEQEuclid::EXT_CLOCK_INPUT));
+    addInput(Port::create<PJ301MPort>(Vec(bankX[1], bankY[1]), Port::INPUT, module, SEQEuclid::RESET_INPUT));
+    addParam(ParamWidget::create<TL1105>(Vec(bankX[1]+24+4, bankY[1] + 4), module, SEQEuclid::RESET_BUTTON, 0.0, 1.0, 0.0));
+    addParam(ParamWidget::create<Davies1900hBlackKnob>(Vec(bankX[5]-6, bankY[1] + 3), module, SEQEuclid::GATE_LENGTH_PARAM, 0.0, 1.0, 1.0));
+
+    // Row displays
+
+    {
+      SEQEuclidDisplay *display = new SEQEuclidDisplay();
+      display->box.pos = Vec(bankX[0], bankY[2]);
+      display->box.size = Vec(82, 42);
+      display->value = &module->bank1.fill;
+      display->module = module; // pass access to module-level variables, including contrast
+      addChild(display);
+    }
+    {
+      SEQEuclidDisplay *display = new SEQEuclidDisplay();
+      display->box.pos = Vec(bankX[2], bankY[2]);
+      display->box.size = Vec(82, 42);
+      display->value = &module->bank1.length;
+      display->module = module; // pass access to module-level variables, including contrast
+      addChild(display);
+    }
+
+    {
+      SEQEuclidDisplay *display = new SEQEuclidDisplay();
+      display->box.pos = Vec(bankX[0], bankY[3]);
+      display->box.size = Vec(82, 42);
+      display->value = &module->bank2.fill;
+      display->module = module; // pass access to module-level variables, including contrast
+      addChild(display);
+    }
+    {
+      SEQEuclidDisplay *display = new SEQEuclidDisplay();
+      display->box.pos = Vec(bankX[2], bankY[3]);
+      display->box.size = Vec(82, 42);
+      display->value = &module->bank2.length;
+      display->module = module; // pass access to module-level variables, including contrast
+      addChild(display);
+    }
+    {
+      SEQEuclidDisplay *display = new SEQEuclidDisplay();
+      display->box.pos = Vec(bankX[0], bankY[4]);
+      display->box.size = Vec(82, 42);
+      display->value = &module->bank3.fill;
+      display->module = module; // pass access to module-level variables, including contrast
+      addChild(display);
+    }
+    {
+      SEQEuclidDisplay *display = new SEQEuclidDisplay();
+      display->box.pos = Vec(bankX[2], bankY[4]);
+      display->box.size = Vec(82, 42);
+      display->value = &module->bank3.length;
+      display->module = module; // pass access to module-level variables, including contrast
+      addChild(display);
+    }
+    {
+      SEQEuclidDisplay *display = new SEQEuclidDisplay();
+      display->box.pos = Vec(bankX[0], bankY[5]);
+      display->box.size = Vec(82, 42);
+      display->value = &module->bank4.fill;
+      display->module = module; // pass access to module-level variables, including contrast
+      addChild(display);
+    }
+    {
+      SEQEuclidDisplay *display = new SEQEuclidDisplay();
+      display->box.pos = Vec(bankX[2], bankY[5]);
+      display->box.size = Vec(82, 42);
+      display->value = &module->bank4.length;
+      display->module = module; // pass access to module-level variables, including contrast
+      addChild(display);
+    }
+
+
+    // Rows of bank controlls
+
+    for (int row = 0; row < 4; row++) {
+      addParam(ParamWidget::create<Davies1900hBlackKnob>(Vec(bankX[1], bankY[row + 2] + 3), module, SEQEuclid::FILL1_PARAM+row, 0.0, 256.0, 0.0));
+      addParam(ParamWidget::create<Davies1900hBlackKnob>(Vec(bankX[3], bankY[row + 2] + 3), module, SEQEuclid::LENGTH1_PARAM+row, 0.0, 256.0, 0.0));
+      addParam(ParamWidget::create<Davies1900hBlackKnob>(Vec(bankX[4], bankY[row + 2] + 3), module, SEQEuclid::PROB1_PARAM + row, 0.0, 1.0, 1.0));
+      addOutput(Port::create<PJ301MPort>(Vec(bankX[5], bankY[row + 2] + 9), Port::OUTPUT, module, SEQEuclid::GATE1_OUTPUT + row));
+      addOutput(Port::create<PJ301MPort>(Vec(bankX[6], bankY[row + 2] + 9), Port::OUTPUT, module, SEQEuclid::TRIGGER1_OUTPUT + row));
+      addParam(ParamWidget::create<TL1105>(Vec(bankX[7], bankY[row + 2] + 13), module, SEQEuclid::JOG1_BUTTON + row, 0.0, 1.0, 0.0));
+    }
+
+    // Final 2 outputs and output light
+
+    addOutput(Port::create<PJ301MPort>(Vec(bankX[5], bankY[6] + 8), Port::OUTPUT, module, SEQEuclid::GATE_OR_OUTPUT));
+    addOutput(Port::create<PJ301MPort>(Vec(bankX[6], bankY[6] + 8), Port::OUTPUT, module, SEQEuclid::TRIGGER_OR_OUTPUT));
+    addChild(ModuleLightWidget::create<SmallLight<RedLight>>(Vec(bankX[7]+4, bankY[6] + 16), module, SEQEuclid::GATES_LIGHT));
+
+    // Make sure it stays put
+
+    addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+    addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 0)));
+    addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+    addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 365)));
+
+  }
+  void appendContextMenu(Menu *menu) override {
+    menu->addChild(MenuEntry::create());
+
+    SEQEuclid *seqeuclid = dynamic_cast<SEQEuclid*>(module);
+    assert(seqeuclid);
+
+		menu->addChild(construct<MenuLabel>());
+		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Options"));  // add options section to menu
+		menu->addChild(construct<SEQEuclidHighContrastItem>(&MenuItem::text, "High Contrast", &SEQEuclidHighContrastItem::seqeuclid, seqeuclid));
+  }
+
+};
+
+Model *modelSEQEuclid = Model::create<SEQEuclid, SEQEuclidWidget>("MrLumps", "SEQE", "SEQ-Euclid", SEQUENCER_TAG);
