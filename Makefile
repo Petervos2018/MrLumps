@@ -1,14 +1,15 @@
 SLUG = MrLumps
-VERSION = 0.5.2
+VERSION = 0.6.0
 
-SOURCES = $(wildcard src/*.cpp)
+# Add .cpp and .c files to the build
+SOURCES += $(wildcard src/*.cpp)
 
-# Must include the VCV plugin Makefile framework
-include ../../plugin.mk
+# Add files to the ZIP package when running `make dist`
+# The compiled plugin is automatically added.
+DISTRIBUTABLES += $(wildcard LICENSE*) res
 
-dist: all
-	mkdir -p dist/$(SLUG)
-	cp LICENSE* dist/$(SLUG)/
-	cp $(TARGET) dist/$(SLUG)/
-	cp -R res dist/$(SLUG)/
-	cd dist && zip -5 -r $(SLUG)-$(VERSION)-$(ARCH).zip $(SLUG)
+# If RACK_DIR is not defined when calling the Makefile, default to two levels above
+RACK_DIR ?= ../..
+
+# Include the VCV Rack plugin Makefile framework
+include $(RACK_DIR)/plugin.mk

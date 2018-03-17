@@ -1,5 +1,3 @@
-<img src="https://github.com/djpeterso23662/MrLumps/blob/master/res/MrLumps_Family.jpg" width="100%">
-
 MrLumps VCV Rack Modules
 ========================
 
@@ -18,13 +16,17 @@ David Peterson added a High Contrast option, replaced the PNG panel images with
 SVG images, fixed an onSampleRateChange bug, and made MrLumps compliant with VCV
 Rack’s Community Package manager in release 0.5.2.
 
+David Peterson migrated the MrLumps plugins to VCV Rack’s 0.6.0 API in release
+0.6.0.
+
 Building
 --------
 
-This has been built against VCV Rack 0.5.1. on Linux, MacOS, and Windows.
+This plugin has been built against VCV Rack 0.6.0 on Linux, MacOS, and Windows.
 
-Just type `make `in the folder. The version is now included in the Makefile
-script and does not need to be given on the command line.
+Just type `make` in the plugin folder. The version is now included in the VCV
+Rack plugin Makefile framework and does not need to be given on the command
+line.
 
 SEQ-Euclid
 ----------
